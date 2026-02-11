@@ -1,6 +1,7 @@
 # Minimal RAG Practice
 
-HuggingFace Datasets + SentenceTransformers + Qdrant で最小RAGを試す構成です。
+HuggingFace Datasets + SentenceTransformers + Qdrant で最小RAGを試す構成です。  
+投入（`ingest.py`）と問い合わせ（`query.py`）を分離しています。
 
 ## Setup
 
@@ -16,18 +17,35 @@ pip install datasets sentence-transformers qdrant-client openai python-dotenv
 
 ## Run
 
+1) 初回投入（または再構築）
+
 ```bash
 source .venv/bin/activate
+python ingest.py --dataset ag_news --split "train[:200]" --text-column text
+```
+
+コレクションを作り直す場合:
+
+```bash
+python ingest.py --reindex
+```
+
+2) 問い合わせ
+
+```bash
+python query.py --query "この記事は何について書かれていますか？"
+```
+
+3) まとめ実行（互換ラッパー）
+
+```bash
 python main.py --query "What is this article about?"
 ```
 
-日本語で試す例:
+`main.py` は既存コレクションを再利用し、`--reindex` のときだけ再投入します。
 
 ```bash
-python main.py --query "この記事は何について書かれていますか？"
-
-# Qdrantの保存先とコレクション名を指定する例
-python main.py --query "この記事は何について書かれていますか？" --qdrant-path ./qdrant_data --collection rag_practice
+python main.py --query "この記事は何について書かれていますか？" --reindex
 ```
 
 ## Notes
@@ -36,4 +54,5 @@ python main.py --query "この記事は何について書かれていますか�
 - `OPENAI_API_KEY` が未設定でも検索結果までは動作します。
 - 生成モデルは `.env` の `OPENAI_MODEL` か `--llm-model` で変更できます。
 - ベクトルDBは無料の `Qdrant` ローカルモードで、`./qdrant_data` に永続化されます。
+- 既存コレクションがある場合、`ingest.py` はデフォルトで再投入をスキップします（`--reindex` で再構築）。
 - 別データセットを使う場合は `--dataset`, `--split`, `--text-column` を指定してください。
